@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dsd-conf-entrypoint
+  namespace: {{ .Release.Namespace }}
+data:
+  dsd-entrypoint.sh: |
+    #!/bin/bash
+    set -e
+
+    #echo "Installing unzip" >&2
+    #apt-get install unzip
+    echo "Unzipping the dataset" >&2
+    unzip /home/shared/dataset.zip
+
+
+

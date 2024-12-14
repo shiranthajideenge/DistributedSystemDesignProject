@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dsd-4-conf
+  namespace : {{ .Release.Namespace }}
+  {{ if .Values.dsd.deployment.config }}
+data:
+  {{- range $index, $content := .Values.dsd.deployment.config }}
+  {{ $index }}: |-
+  {{ tpl $content $ | indent 4 }}
+  {{- end }}
+
+  {{ else }}
+data:
+  server.py: |-
+    
+  {{ end }}

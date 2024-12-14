@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: overall-dsd-ingress
+  namespace : {{ .Release.Namespace }}
+{{- if .Values.dsd.deployment.ingress.annotations }}
+  annotations:
+{{ toYaml .Values.dsd.deployment.ingress.annotations | indent 4 }}
+{{- end }}
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.dsd.deployment.ingress.hostname }}
+  rules:
+  - host: {{ .Values.dsd.deployment.ingress.hostname }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: overall-dsd-service
+            port: 
+              number: 8243

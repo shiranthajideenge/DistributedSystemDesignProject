@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dsd-pod-2-deployment
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      deployment: dsd-pod-2
+      node: dsd-pod-2
+  template:
+    metadata:
+      annotations:
+        checksum.am.conf: {{ include (print $.Template.BasePath "/dsd/instance-4/dsd-pod-4-conf.yaml") . | sha256sum }}
+      labels:
+        deployment: dsd-pod-2
+        node: dsd-pod-2
+    spec:
+      #initContainers:
+      #  - name: init-mysql-db
+      #    image: busybox:1.32
+      #    command: []
+      containers:
+        - name: dsd-pod-2
+          image: {{ .Values.dsd.deployment.dockerimage.imageName }}
+          imagePullPolicy: {{ .Values.dsd.deployment.dockerimage.imagePullPolicy }}
+          livenessProbe:
+            exec:
+              command:
+                - cat
+                - /home/dsd/shared/gas_emissions_MPI.py
+            initialDelaySeconds: {{ .Values.dsd.deployment.dockerimage.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dsd.deployment.dockerimage.livenessProbe.periodSeconds }}
+          readinessProbe:
+            exec:
+              command:
+                - cat
+                - /home/dsd/shared/gas_emissions_MPI.py
+            initialDelaySeconds: {{ .Values.dsd.deployment.dockerimage.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dsd.deployment.dockerimage.readinessProbe.periodSeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command:  ['sh', '-c', '']
+          resources:
+            requests:
+              memory: {{ .Values.dsd.deployment.resources.requests.memory }}
+              cpu: {{ .Values.dsd.deployment.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.dsd.deployment.resources.limits.memory }}
+              cpu: {{ .Values.dsd.deployment.resources.limits.cpu }}
+          securityContext:
+            runAsUser: 802
+          ports:
+            - containerPort: 22
+              protocol: "TCP"
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - name: dsd-shared-storage
+              mountPath: /home/shared/
+      serviceAccountName: {{ .Values.kubernetes.serviceAccount }}
+      {{- if .Values.dsd.deployment.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.dsd.deployment.imagePullSecrets }}
+      {{- else if and (not (eq .Values.dsd.subscription.username "")) (not (eq .Values.dsd.subscription.password "")) }}
+      imagePullSecrets:
+        - name: dsd-private-registry-creds
+      {{ end }}
+      volumes:
+        - name: dsd-shared-storage
+          persistentVolumeClaim:
+            claimName: shared-artifacts-volume-claim-2
